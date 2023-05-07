@@ -2,13 +2,13 @@
 
 namespace Cspray\PrecisionStopwatch;
 
-final readonly class Duration {
+final class Duration {
 
-    private int|float $timeTakenInNanoseconds;
+    private readonly int|float $timeTakenInNanoseconds;
 
     public function __construct(
-        private int|float $start,
-        private int|float $end
+        private readonly int|float $start,
+        private readonly int|float $end
     ) {
         $this->timeTakenInNanoseconds = $this->end - $this->start;
     }
