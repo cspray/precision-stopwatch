@@ -1,6 +1,6 @@
 # Precision Stopwatch
  
-Precisely time PHP scripts and code, down to the nanosecond, by utilizing the [hrtime]() function. 
+Precisely time PHP scripts and code, down to the nanosecond, by utilizing the [hrtime](https://php.net/hrtime) function. 
 
 ## Installing
 
