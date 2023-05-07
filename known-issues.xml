@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<files psalm-version="5.11.0@c9b192ab8400fdaf04b2b13d110575adc879aa90">
+  <file src="src/HighResolutionPreciseTime.php">
+    <TypeDoesNotContainType>
+      <code>$now === false</code>
+    </TypeDoesNotContainType>
+  </file>
+</files>
