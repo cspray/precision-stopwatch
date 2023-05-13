@@ -10,6 +10,8 @@ final class Stopwatch {
 
     private readonly PreciseTime $preciseTime;
 
+    private bool $isRunning = false;
+
     /**
      * Ensures that marker IDs are unique-per-run.
      *
@@ -17,13 +19,7 @@ final class Stopwatch {
      */
     private string $markerIdSalt;
 
-    /**
-     * Keeps up with the marker ID for the call to Stopwatch::start() so that we don't have to generate the ID while
-     * the stopwatch is running.
-     *
-     * @var string
-     */
-    private string $startId;
+    private ?Marker $startMarker = null;
 
     /**
      * @var array<string, int|float>
@@ -40,7 +36,7 @@ final class Stopwatch {
     private function setFreshMarkers() : void {
         $this->marks = [];
         $this->markerIdSalt = bin2hex(random_bytes(8));
-        $this->startId = $this->nextMarkerId();
+        $this->startMarker = null;
     }
 
     private function nextMarkerId() : string {
@@ -48,7 +44,7 @@ final class Stopwatch {
     }
 
     public function isRunning() : bool {
-        return array_key_exists($this->startId, $this->marks);
+        return $this->isRunning;
     }
 
     /**
@@ -59,7 +55,8 @@ final class Stopwatch {
             throw StopwatchAlreadyStarted::fromUnableToStartStartedStopwatch();
         }
 
-        $this->marks[$this->startId] = $this->preciseTime->now();
+        $this->isRunning = true;
+        $this->startMarker = $this->mark();
     }
 
     /**
@@ -74,21 +71,9 @@ final class Stopwatch {
         $id = $this->nextMarkerId();
         $this->marks[$id] = $now;
 
-        return new class($id, new Duration($this->marks[$this->startId], $now)) implements Marker {
+        $start = isset($this->startMarker) ? $this->marks[$this->startMarker->getId()] : $now;
 
-            public function __construct(
-                private readonly string $id,
-                private readonly Duration $duration,
-            ) {}
-
-            public function getId() : string {
-                return $this->id;
-            }
-
-            public function getDuration() : Duration {
-                return $this->duration;
-            }
-        };
+        return $this->createMarker($id, $start, $now);
     }
 
     /**
@@ -99,23 +84,22 @@ final class Stopwatch {
             throw StopwatchNotStarted::fromUnableToStopNotRunningStopwatch();
         }
 
-        $now = $this->preciseTime->now();
-        $endId = $this->nextMarkerId();
-        $this->marks[$endId] = $now;
-
-        $metrics = new class($this->marks, $this->startId, $endId) implements Metrics {
+        $startMarker = $this->startMarker;
+        assert($startMarker !== null);
+        $endMarker = $this->mark();
+        $metrics = new class($this->marks, $startMarker, $endMarker) implements Metrics {
 
             /**
              * @param array<string, int|float> $marks
              */
             public function __construct(
                 private readonly array $marks,
-                private readonly string $startId,
-                private readonly string $endId
+                private readonly Marker $start,
+                private readonly Marker $end
             ) {}
 
             public function getTotalDuration() : Duration {
-                return $this->getDurationBetweenMarkersById($this->startId, $this->endId);
+                return $this->getDurationBetweenMarkersById($this->start->getId(), $this->end->getId());
             }
 
             public function getDurationBetweenMarkers(Marker $startMarker, Marker $endMarker) : Duration {
@@ -132,11 +116,38 @@ final class Stopwatch {
 
                 return new Duration($this->marks[$start], $this->marks[$end]);
             }
+
+            public function getStartMarker() : Marker {
+                return $this->start;
+            }
+
+            public function getEndMarker() : Marker {
+                return $this->end;
+            }
         };
 
         $this->setFreshMarkers();
+        $this->isRunning = false;
 
         return $metrics;
+    }
+
+    private function createMarker(string $markerId, int|float $start, int|float $end) : Marker {
+        return new class($markerId, new Duration($start, $end)) implements Marker {
+
+            public function __construct(
+                private readonly string $id,
+                private readonly Duration $duration,
+            ) {}
+
+            public function getId() : string {
+                return $this->id;
+            }
+
+            public function getDuration() : Duration {
+                return $this->duration;
+            }
+        };
     }
 
 }

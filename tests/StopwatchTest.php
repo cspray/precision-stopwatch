@@ -154,4 +154,23 @@ final class StopwatchTest extends TestCase {
         self::assertNotSame($mark1->getId(), $mark2->getId());
     }
 
+    public function testGettingStartMarkerReturnsDurationWithZero() : void {
+        $this->subject->start();
+
+        $metrics = $this->subject->stop();
+
+        self::assertSame(0, $metrics->getStartMarker()->getDuration()->timeTakenInNanoseconds());
+    }
+
+    public function testGettingEndMarkerReturnsDurationMarkerMatchingTotalDuration() : void {
+        $this->subject->start();
+
+        $metrics = $this->subject->stop();
+
+        self::assertSame(
+            $metrics->getTotalDuration()->timeTakenInNanoseconds(),
+            $metrics->getEndMarker()->getDuration()->timeTakenInNanoseconds()
+        );
+    }
+
 }
