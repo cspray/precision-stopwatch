@@ -10,4 +10,8 @@ interface Metrics {
 
     public function getDurationBetweenMarkers(Marker $startMarker, Marker $endMarker) : Duration;
 
+    public function getStartMarker() : Marker;
+
+    public function getEndMarker() : Marker;
+
 }
