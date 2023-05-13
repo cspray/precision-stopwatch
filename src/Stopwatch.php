@@ -84,8 +84,10 @@ final class Stopwatch {
             throw StopwatchNotStarted::fromUnableToStopNotRunningStopwatch();
         }
 
+        $startMarker = $this->startMarker;
+        assert($startMarker !== null);
         $endMarker = $this->mark();
-        $metrics = new class($this->marks, $this->startMarker, $endMarker) implements Metrics {
+        $metrics = new class($this->marks, $startMarker, $endMarker) implements Metrics {
 
             /**
              * @param array<string, int|float> $marks
